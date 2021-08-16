@@ -7,6 +7,18 @@ documentation before upgrading to a new release.
 
 Released closed milestones can be found on [GitHub](https://github.com/Icinga/icinga-powershell-kickstart/milestones?state=closed).
 
+## 1.3.0 (2021-09-07)
+
+[Issue and PRs](https://github.com/Icinga/icinga-powershell-framework/milestone/2?closed=1)
+
+### General
+
+* Adds `IcingaForWindows.ps1` just for change tracking, as this script is hosted on [packages.icinga.com](https://packages.icinga.com/IcingaForWindows/) for easier accessibility
+
+### Enhancement
+
+* [#9](https://github.com/Icinga/icinga-powershell-kickstart/pull/9) Prepares Kickstart script for Icinga for Windows v1.6.0 and the new repository management
+
 ## 1.2.0 (2020-12-01)
 
 ### Enhancement

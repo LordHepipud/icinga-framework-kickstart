@@ -13,15 +13,17 @@ Once loaded, it will be executed and asks all required questions on how and wher
 
 ```powershell
 [Net.ServicePointManager]::SecurityProtocol = "tls12, tls11";
-$ProgressPreference = "SilentlyContinue";
+$ProgressPreference                         = "SilentlyContinue";
 
-$global:IcingaFrameworkKickstartSource = 'https://raw.githubusercontent.com/Icinga/icinga-powershell-kickstart/master/script/icinga-powershell-kickstart.ps1';
+Invoke-WebRequest `
+    -UseBasicParsing `
+    -Uri 'https://packages.icinga.com/IcingaForWindows/IcingaForWindows.ps1' `
+    -OutFile 'C:\Users\Public\IcingaForWindows.ps1';
 
-$Script = (Invoke-WebRequest -UseBasicParsing -Uri $global:IcingaFrameworkKickstartSource).Content;
-$Script += "`r`n`r`n Start-IcingaFrameworkWizard;";
-
-Invoke-Command -ScriptBlock ([Scriptblock]::Create($Script));
+& 'C:\Users\Public\IcingaForWindows.ps1'
 ```
+
+More details and examples can be found on the [Icinga documentation](https://icinga.com/docs/icinga-for-windows/latest/doc/02-Installation/).
 
 ## Documentation
 
