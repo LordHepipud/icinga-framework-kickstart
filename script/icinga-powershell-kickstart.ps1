@@ -42,7 +42,7 @@ function Start-IcingaFrameworkWizard()
                 # Re-check our version and proceed with 1.6.0 or later handling, in case we updated to it
                 $FrameworkVersion = ((Get-Module -ListAvailable -Name 'icinga-powershell-framework' -ErrorAction SilentlyContinue) | Sort-Object Version -Descending | Select-Object Version -First 1).Version;
 
-                if ($FrameworkVersion -ge [Version]::New(1, 6, 0)) {
+                if ([Version]$FrameworkVersion -ge [Version]::New(1, 6, 0)) {
                     Install-IfW160Environment -SkipWizard:$SkipWizard -AnswerFile $AnswerFile -InstallCommand $InstallCommand;
                     return;
                 }

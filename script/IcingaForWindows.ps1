@@ -72,7 +72,7 @@ function Install-IcingaKickstart()
         [string]$ModuleDirectory  = $null,
         [string]$AnswerFile       = '',
         [string]$InstallCommand   = '',
-        [switch]$AllowUpdate      = $null,
+        [switch]$AllowUpdate      = $FALSE,
         [switch]$SkipWizard       = $FALSE
     );
 
@@ -168,4 +168,10 @@ function Install-IcingaKickstart()
     Invoke-Command -ScriptBlock ([Scriptblock]::Create($ScriptContent)) -ArgumentList $KickStartArguments;
 }
 
-Install-IcingaKickstart @args;
+Install-IcingaKickstart `
+	-IcingaRepository $IcingaRepository `
+	-ModuleDirectory $ModuleDirectory `
+	-AnswerFile $AnswerFile `
+	-InstallCommand $InstallCommand `
+	-AllowUpdate:$AllowUpdate `
+	-SkipWizard:$SkipWizard;
