@@ -1,10 +1,13 @@
 function Start-IcingaFrameworkWizard()
 {
-    param(
-        $RepositoryUrl       = $null,
-        $ModuleDirectory     = $null,
-        $AllowUpdate         = $null,
-        [switch]$SkipWizard
+    param (
+        $RepositoryUrl          = $null,
+        $ModuleDirectory        = $null,
+        [string]$AnswerFile     = '',
+        [string]$InstallCommand = '',
+        [switch]$AllowUpdate    = $FALSE,
+        [switch]$SkipWizard     = $FALSE,
+        [switch]$IfW160         = $FALSE
     );
 
     if ((Test-AdministrativeShell) -eq $FALSE) {
@@ -19,24 +22,48 @@ function Start-IcingaFrameworkWizard()
     # In case the Icinga PowerShell Framework is already installed, we should use the Cmdlets and features
     # provided from there instead of using the kickstart handlings
     if ((Get-Command -ListAvailable -Name 'Use-Icinga' -ErrorAction SilentlyContinue)) {
+        $FrameworkVersion = ((Get-Module -ListAvailable -Name 'icinga-powershell-framework' -ErrorAction SilentlyContinue) | Sort-Object Version -Descending | Select-Object Version -First 1).Version;
+
+        if ($FrameworkVersion -lt [Version]::New(1, 6, 0)) {
+            $IfW160 = $FALSE;
+        }
+    
         Write-IcingaConsoleNotice 'Icinga PowerShell Framework is already installed. Using Framework functions for kickstarter.';
         Write-IcingaConsoleNotice 'Loading Icinga PowerShell Framework.';
         Use-Icinga;
 
-        if ($null -eq $AllowUpdate -Or $AllowUpdate -eq $TRUE) {
-            Install-IcingaFrameworkUpdate -FrameworkUrl $RepositoryUrl;
-        } else {
-            Write-IcingaConsoleNotice 'Skipping update of Icinga PowerShell Framework based on user input.';
-        }
+        if ($IfW160 -eq $FALSE) {
+            if ($AllowUpdate -eq $TRUE) {
+                Install-IcingaFrameworkUpdate -FrameworkUrl $RepositoryUrl;
 
-        if ($SkipWizard -eq $FALSE -And (Read-IcingaWizardAnswerInput -Prompt 'Do you want to run the Icinga Agent installation wizard now? (You can do this later by running the command "Start-IcingaAgentInstallWizard")' -Default 'y').result -eq 1) {
-            Write-IcingaConsoleNotice 'Starting Icinga Agent installation wizard';
-            Write-IcingaConsoleNotice '=======';
-            Start-IcingaAgentInstallWizard;
+                Import-Module 'icinga-powershell-framework' -Global -Force;
+                Import-Module 'icinga-powershell-framework' -Force;
+
+                # Re-check our version and proceed with 1.6.0 or later handling, in case we updated to it
+                $FrameworkVersion = ((Get-Module -ListAvailable -Name 'icinga-powershell-framework' -ErrorAction SilentlyContinue) | Sort-Object Version -Descending | Select-Object Version -First 1).Version;
+
+                if ($FrameworkVersion -ge [Version]::New(1, 6, 0)) {
+                    Install-IfW160Environment -SkipWizard:$SkipWizard -AnswerFile $AnswerFile -InstallCommand $InstallCommand;
+                    return;
+                }
+            } else {
+                Write-IcingaConsoleNotice 'Skipping update of Icinga PowerShell Framework based on user input.';
+            }
+
+            if ($SkipWizard -eq $FALSE -And (Read-IcingaWizardAnswerInput -Prompt 'Do you want to run the Icinga Agent installation wizard now? (You can do this later by running the command "Start-IcingaAgentInstallWizard")' -Default 'y').result -eq 1) {
+                Write-IcingaConsoleNotice 'Starting Icinga Agent installation wizard';
+                Write-IcingaConsoleNotice '=======';
+                Start-IcingaAgentInstallWizard;
+                return;
+            }
+
+            return;
+        } else {
+            Install-IfW160Environment -SkipWizard:$SkipWizard -AnswerFile $AnswerFile -InstallCommand $InstallCommand;
             return;
         }
 
-        Write-IcingaConsoleNotice 'Skipping Icinga PowerShell Framework installation wizard. Kickstart script completed.';
+        Write-IcingaConsoleNotice 'Kickstart script completed.';
         return;
     }
 
@@ -128,19 +155,47 @@ function Start-IcingaFrameworkWizard()
             return;
         }
 
-        if ((Read-IcingaWizardAnswerInput -Prompt 'Do you want to run the Icinga Agent installation wizard now? (You can do this later by running the command "Start-IcingaAgentInstallWizard")' -Default 'y').result -eq 1) {
-            Write-IcingaConsoleNotice 'Starting Icinga Agent installation wizard';
-            Write-IcingaConsoleNotice '=======';
-            Start-IcingaAgentInstallWizard;
+        if ($IfW160 -eq $FALSE) {
+            if ((Read-IcingaWizardAnswerInput -Prompt 'Do you want to run the Icinga Agent installation wizard now? (You can do this later by running the command "Start-IcingaAgentInstallWizard")' -Default 'y').result -eq 1) {
+                Write-IcingaConsoleNotice 'Starting Icinga Agent installation wizard';
+                Write-IcingaConsoleNotice '=======';
+                Start-IcingaAgentInstallWizard;
+                return;
+            }
+        } else {
+            Install-IfW160Environment -SkipWizard:$SkipWizard -AnswerFile $AnswerFile -InstallCommand $InstallCommand;
+            return;
         }
-
-        # Todo: Preparation for a later version of the module
-        <#if ((Read-IcingaWizardAnswerInput -Prompt 'Do you want to install the framework on different hosts?' -Default 'y').result -eq 1) {
-            $HostList = (Read-IcingaWizardAnswerInput -Prompt 'Please enter the hosts separated by ","' -Default 'v').answer;
-            Install-IcingaFrameworkRemoteHost -RemoteHosts $HostList.Split(',');
-        }#>
     } catch {
         Write-IcingaConsoleError ([string]::Format('Unable to load the Icinga PowerShell Framework. Please check your PowerShell execution policies for possible problems. Error: {0}', $_.Exception));
+    }
+}
+
+function Install-IfW160Environment()
+{
+    param (
+        [string]$AnswerFile     = '',
+        [string]$InstallCommand = '',
+        [switch]$SkipWizard     = $FALSE
+    )
+
+    if ($SkipWizard) {
+        return;
+    }
+
+    if ([string]::IsNullOrEmpty($AnswerFile) -eq $FALSE) {
+        Install-Icinga -InstallFile $AnswerFile;
+        return;
+    }
+
+    if ([string]::IsNullOrEmpty($InstallCommand) -eq $FALSE) {
+        Install-Icinga -InstallCommand $InstallCommand;
+        return;
+    }
+
+    if ((Read-IcingaWizardAnswerInput -Prompt 'Do you want to run the Icinga Management Console? (You can run it later with "icinga -Manage"' -Default 'y').result -eq 1) {
+        Invoke-IcingaCommand -Manage;
+        return;
     }
 }
 
@@ -398,21 +453,32 @@ function Write-IcingaConsoleError()
 
 function Test-PowerShellExecutionPolicy()
 {
-    $UserPolicy    = Get-ExecutionPolicy -Scope CurrentUser;
-    $MachinePolicy = Get-ExecutionPolicy -Scope LocalMachine;
+    $UserPolicy       = Get-ExecutionPolicy -Scope CurrentUser;
+    $MachinePolicy    = Get-ExecutionPolicy -Scope LocalMachine;
+    $ProcessPolicy    = Get-ExecutionPolicy -Scope LocalMachine;
+    $AllPolicies      = Get-ExecutionPolicy -List;
+    [bool]$CanExecute = $FALSE;
 
-    if ($UserPolicy -eq 'Undefined' -And $MachinePolicy -eq 'Undefined') {
-        Write-IcingaConsoleError 'Your user and machine execution policies are configured as "Undefined". Please review your internal PowerShell execution policies and run this script again. Further details can be found at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-6';
+    foreach ($policy in $AllPolicies) {
+        if ($policy.ExecutionPolicy -eq 'Undefined' -Or $policy.ExecutionPolicy -eq 'Restricted') {
+            continue;
+        }
+
+        $CanExecute = $TRUE;
+    }
+
+    if ($CanExecute -eq $FALSE) {
+        Write-IcingaConsoleError 'Your user and machine execution policies are configured as "Undefined". Please review your internal PowerShell execution policies and run this script again. Further details can be found at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy';
         return $FALSE;
     }
 
-    if ($UserPolicy -eq 'Restricted' -Or $MachinePolicy -eq 'Restricted') {
-        Write-IcingaConsoleError 'Your user and/or machine execution policies are configured as "Restricted". Please review your internal PowerShell execution policies and run this script again. Further details can be found at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy?view=powershell-6';
+    if ($ProcessPolicy -eq 'Restricted') {
+        Write-IcingaConsoleError 'Your process execution policies is configured as "Restricted". Please review your internal PowerShell execution policies and run this script again. Further details can be found at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.security/set-executionpolicy';
         return $FALSE;
     }
 
-    if ($UserPolicy -eq 'AllSigned' -Or $MachinePolicy -eq 'AllSigned' -Or $UserPolicy -eq 'RemoteSigned' -or $MachinePolicy -eq 'RemoteSigned') {
-        Write-IcingaConsoleWarning 'Your user and/or machine execution policies are configured as "AllSigned" or "RemoteSigned". This means you can only execute PowerShell scripts and modules which are signed by a trusted publisher. Please have a look at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_signing?view=powershell-7 for further details about how to sign modules and scripts to ensure Icinga for Windows is running properly on your system.';
+    if ($ProcessPolicy -eq 'AllSigned' -Or $ProcessPolicy -eq 'RemoteSigned') {
+        Write-IcingaConsoleWarning 'Your process policy is configured as "AllSigned" or "RemoteSigned". This means you can only execute PowerShell scripts and modules which are signed by a trusted publisher. Please have a look at https://docs.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_signing for further details about how to sign modules and scripts to ensure Icinga for Windows is running properly on your system.';
         return $TRUE;
     }
 
