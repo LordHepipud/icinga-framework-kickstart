@@ -1,5 +1,5 @@
 @{
-    ModuleVersion     = '1.3.0'
+    ModuleVersion     = '1.4.0'
     GUID              = '875189b7-cfc2-44c0-817d-f754f40aae64'
     Author            = 'Lord Hepipud'
     CompanyName       = 'Icinga GmbH'
@@ -18,7 +18,7 @@
             ProjectUri   = 'https://github.com/Icinga/icinga-powershell-kickstart'
             ReleaseNotes = 'https://github.com/Icinga/icinga-powershell-kickstart/releases'
         };
-        Version    = 'v1.3.0';
+        Version    = 'v1.4.0';
         Name       = 'Windows Kickstart';
         Type       = 'kickstart';
         Function   = 'Start-IcingaFrameworkWizard';
