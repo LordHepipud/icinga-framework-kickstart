@@ -248,10 +248,10 @@ function Expand-IcingaFrameworkArchive()
 
     foreach ($entry in $FolderContent) {
         if ($entry.Name -eq 'icinga-powershell-framework') {
-            return (Join-Path -Path $Destination -ChildPath $entry);
+            return $entry.FullName;
         }
         if ($entry.Name -like 'icinga-powershell-framework*') {
-            $Extracted = $entry;
+            $Extracted = $entry.Name;
         }
     }
 
