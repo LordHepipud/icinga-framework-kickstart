@@ -23,7 +23,7 @@ Invoke-WebRequest `
 & 'C:\Users\Public\IcingaForWindows.ps1'
 ```
 
-More details and examples can be found on the [Icinga documentation](https://icinga.com/docs/icinga-for-windows/latest/doc/02-Installation/).
+More details and examples can be found on the [Icinga documentation](https://icinga.com/docs/icinga-for-windows/latest/doc/110-Installation/01-Getting-Started/).
 
 ## Documentation
 
