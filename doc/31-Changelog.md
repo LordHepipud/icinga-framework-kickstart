@@ -7,13 +7,14 @@ documentation before upgrading to a new release.
 
 Released closed milestones can be found on [GitHub](https://github.com/Icinga/icinga-powershell-kickstart/milestones?state=closed).
 
-## 1.4.0 (2021-11-09)
+## 1.4.0 (2022-02-09)
 
 [Issue and PRs](https://github.com/Icinga/icinga-powershell-framework/milestone/3?closed=1)
 
 ### Bugfixes
 
 * [#12](https://github.com/Icinga/icinga-powershell-kickstart/pull/12) Fixes kickstart exception on Framework installation on PowerShell 7
+* [#15](https://github.com/Icinga/icinga-powershell-kickstart/pull/15) Fixes installation error for Icinga PowerShell Framework caused by a folder lock for virus scanners as example
 
 ## 1.3.0 (2021-09-07)
 
