@@ -297,7 +297,30 @@ function Expand-IcingaFrameworkArchive()
     }
 
     Write-IcingaConsoleNotice 'Installing new Icinga PowerShell Framework version';
-    Move-Item -Path (Join-Path -Path $Destination -ChildPath $Extracted) -Destination $NewDirectory;
+
+	[int]$RetryCount       = 0;
+	[bool]$InstallSuccess  = $FALSE;
+	[string]$LastException = '';
+
+    # In case we cannot move the newly created folder because of file locks from a virus scanner, we loop and
+    # re-try to rename the folder multiple times
+	while ($RetryCount -lt 10) {
+		try {
+			Move-Item -Path (Join-Path -Path $Destination -ChildPath $Extracted) -Destination $NewDirectory -ErrorAction Stop;
+			$InstallSuccess = $TRUE;
+			break;
+		} catch {
+			$LastException = $_.Exception.Message;
+		}
+        Write-IcingaConsoleNotice -Message 'Waiting for lock on folder "{0}" to be released...' -Objects (Join-Path -Path $Destination -ChildPath $Extracted);
+		Start-Sleep -Seconds 4;
+		$RetryCount += 1;
+	}
+	
+	if ($InstallSuccess -eq $FALSE) {
+		Write-IcingaConsoleError -Message 'Failed to install Icinga PowerShell Framework. Exception: {0}' -Objects $LastException;
+		return $NULL;
+	}
 
     return $NewDirectory;
 }
